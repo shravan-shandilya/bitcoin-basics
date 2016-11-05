@@ -1,0 +1,18 @@
+from messages import VersionMessage
+import socket
+v = VersionMessage()
+msg = v.get_raw_msg()
+print msg.encode("hex")
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+HOST = "188.155.136.70"
+PORT = 8333
+
+s.connect((HOST, PORT))
+
+s.send(msg)
+
+data = s.recv(1024)
+reply = VersionMessage()
+reply.load(data)
+s.close()
