@@ -22,8 +22,8 @@ class Account(object):
 	pub_file.write(self.bitcoin_public)
 	pub_file.close()
 
-    def get_bitcoin_public_key():
+    def get_bitcoin_public_key(self):
         return self.bitcoin_public
 
-    def get_bitcoin_private_key():
+    def get_bitcoin_private_key(self):
         return self.bitcoin_private
