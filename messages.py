@@ -27,7 +27,7 @@ class Message(object):
         self.payload_size = struct.unpack(">I",raw[16:20])[0]
 	self.checksum = raw[20:24]
 	self.payload = raw[24:24+self.payload_size]
-	if !self.verify_checksum(self.payload,self.checksum):
+	if not self.verify_checksum(self.payload,self.checksum):
             print "Checksum failed"
 
     def verify_checksum(self,payload,checksum):
@@ -55,3 +55,8 @@ class VersionMessage(Message):
        self.add_payload(payload)
    def load(self,raw):
        self.load_header(raw)
+
+class TransactionMessage(Message):
+   def __init__(self,raw_tx):
+       self.add_payload(raw_tx)
+       super(TransactionMessage,self).__init__("main","tx")
