@@ -65,9 +65,9 @@ class Transaction(object):
 		signing_key = ecdsa.SigningKey.from_string(account.get_bitcoin_private_key().decode("hex"),curve = ecdsa.SECP256k1)
 		verifying_key = signing_key.verifying_key
 		public_key = ('\04'+verifying_key.to_string()).encode("hex")
-		signature = signing_key.sign_digest(hashed_tx,sigencode = ecdsa.util.sigencode_der)
+		signature = signing_key.sign_digest(hashed_tx,sigencode = ecdsa.util.sigencode_der)+'\01' #'\01' is a part of signature
 		self.txn_inputs[0]["signature"] = signature
-		sigscript = (signature + "\01" + struct.pack("<B",len(public_key.decode("hex"))) + public_key.decode("hex"))
+		sigscript = (struct.pack("<B",len(signature))+signature + struct.pack("<B",len(public_key.decode("hex"))) + public_key.decode("hex")) 
 		self.txn_inputs[0]["sigScript"] = sigscript
 		self.txn_inputs[0]["sigScriptBytes"] = struct.pack("<B",len(sigscript))
 		return sigscript
