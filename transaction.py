@@ -6,7 +6,7 @@ class Transaction(object):
 		self.version = struct.pack("<L",1)
 		self.txn_inputs_count = struct.pack("<B",0)
 		self.txn_inputs = []
-		self.txn_outputs_count = struct.pack("<B",0)
+		self.txn_outputs_count = 0
 		self.txn_outputs = []
 		self.locktime = struct.pack("<L",0)
 
@@ -23,10 +23,20 @@ class Transaction(object):
 		self.txn_inputs.append(txn_input)
 
 	def add_output(self,value,recipient_public_key):
-		self.txn_outputs_count = struct.pack("<B",struct.unpack("<B",self.txn_outputs_count)[0]+1)
+		self.txn_outputs_count += 1
 		txn_output = {}
 		txn_output["value"] = struct.pack("<Q",value)
 		txn_output["scriptPubKey"] = self.generate_redeem_script(recipient_public_key).decode("hex")
+		txn_output["scriptPubKeyBytes"] = struct.pack("<B",len(txn_output["scriptPubKey"]))
+		self.txn_outputs.append(txn_output)
+
+	def add_op_return_output(self,data=None,file_path=None):
+		self.txn_outputs_count += 1
+		if not data and file_path:
+			data = file(file_path,"r").read()
+		txn_output = {}
+		txn_output["value"] = struct.pack("<Q",0)
+		txn_output["scriptPubKey"] = self.generate_op_return_script(data).decode("hex")
 		txn_output["scriptPubKeyBytes"] = struct.pack("<B",len(txn_output["scriptPubKey"]))
 		self.txn_outputs.append(txn_output)
 
@@ -40,6 +50,10 @@ class Transaction(object):
 		scriptPubKey = opcodes["OP_DUP"] + opcodes["OP_HASH160"] + "14" + pubKeyHash + opcodes["OP_EQUALVERIFY"] + opcodes["OP_CHECKSIG"]
 		return scriptPubKey
 
+	def generate_op_return_script(self,data):
+		hashed_data = hashlib.sha256(hashlib.sha256(data).digest()).digest().encode("hex")
+		return opcodes["OP_RETURN"] +"28" + "DOCPROOF".encode("hex") + hashed_data
+
 	def get_raw_transaction(self):
 		self.raw_transaction = ""
 		self.raw_transaction = (
@@ -50,13 +64,20 @@ class Transaction(object):
 					+ self.txn_inputs[0]["script_bytes"]
 					+ self.txn_inputs[0]["script"]
 					+ self.txn_inputs[0]["sequence"]
-					+ self.txn_outputs_count
-					+ self.txn_outputs[0]["value"]
-					+ self.txn_outputs[0]["scriptPubKeyBytes"]
-					+ self.txn_outputs[0]["scriptPubKey"]
-					+ self.locktime
-					+ struct.pack("<L",1)
 				)
+		
+		print self.txn_outputs_count,len(self.txn_outputs)
+		assert self.txn_outputs_count == len(self.txn_outputs)
+		self.raw_transaction += struct.pack("<B",self.txn_outputs_count)
+		for i in range(len(self.txn_outputs)):
+			self.raw_transaction = (
+						self.raw_transaction
+						+ self.txn_outputs[i]["value"]
+						+ self.txn_outputs[i]["scriptPubKeyBytes"]
+						+ self.txn_outputs[i]["scriptPubKey"]
+					)
+		self.raw_transaction += self.locktime
+		self.raw_transaction += struct.pack("<L",1)
 		return self.raw_transaction
 
 	def generate_sig_script(self,account):
@@ -83,10 +104,14 @@ class Transaction(object):
 					+ self.txn_inputs[0]["sigScriptBytes"]
 					+ self.txn_inputs[0]["sigScript"]
 					+ self.txn_inputs[0]["sequence"]
-					+ self.txn_outputs_count
-					+ self.txn_outputs[0]["value"]
-					+ self.txn_outputs[0]["scriptPubKeyBytes"]
-					+ self.txn_outputs[0]["scriptPubKey"]
-					+ self.locktime
 				)
+		self.real_transaction += struct.pack("<B",self.txn_outputs_count)
+		for i in range(self.txn_outputs_count):
+			self.real_transaction = (
+				self.real_transaction
+				+ self.txn_outputs[i]["value"]
+				+ self.txn_outputs[i]["scriptPubKeyBytes"]
+				+ self.txn_outputs[i]["scriptPubKey"]
+			)
+		self.real_transaction += self.locktime
 		return self.real_transaction

@@ -12,7 +12,13 @@ recipient_address = "1513wD3VQiqkqYUkeL1w8o6BPxE62d6N1g"
 t = Transaction()
 t.add_input(sender_address,ref_txn_hash,ref_txn_index)
 t.add_output(transfer_value,recipient_address)
+t.add_op_return_output(data="this is awesome!!")
+#t.add_op_return_output(file_path="./main.py")
+#t.add_op_return_output(data="this is getting better")
+#t.add_output(transfer_value,recipient_address)
+
 payload = t.get_real_transaction(Account("raw"))
+print "Raw-transaction:",payload.encode("hex")
 
 tx_msg = TransactionMessage(payload)
-print tx_msg.get_raw_msg().encode("hex")
+print "Transaction on wire:",tx_msg.get_raw_msg().encode("hex")
