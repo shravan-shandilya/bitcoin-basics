@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import os,ecdsa,hashlib,base58
 
-def generate_key_pair(private_key):
+def generate_key_pair(private_key,net="mainnet"):
     if not private_key:
         priv_key = os.urandom(32)
     else:
@@ -13,7 +13,10 @@ def generate_key_pair(private_key):
     temp1 = hashlib.sha256(intermediate1).digest()
     ripemd160.update(temp1)
     intermediate2 = ripemd160.digest()
-    intermediate3 = "\00"+intermediate2
+    if net == "testnet":
+        intermediate3 = "\6f"+intermediate2
+    elif net == "mainnet":
+        intermediate3 = "\00"+intermediate2
     temp2 = hashlib.sha256(intermediate3).digest()
     intermediate4 = hashlib.sha256(temp2).digest()
     checksum = intermediate4[:4]
