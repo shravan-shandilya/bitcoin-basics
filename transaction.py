@@ -30,13 +30,16 @@ class Transaction(object):
 		txn_output["scriptPubKeyBytes"] = struct.pack("<B",len(txn_output["scriptPubKey"]))
 		self.txn_outputs.append(txn_output)
 
-	def add_op_return_output(self,data=None,file_path=None):
+	def add_op_return_output(self,data=None,file_path=None,raw=None):
 		self.txn_outputs_count += 1
 		if not data and file_path:
 			data = file(file_path,"r").read()
 		txn_output = {}
 		txn_output["value"] = struct.pack("<Q",0)
-		txn_output["scriptPubKey"] = self.generate_op_return_script(data).decode("hex")
+		if raw:
+			txn_output["scriptPubKey"] = (opcodes["OP_RETURN"] + hex(len(raw)).split("x")[1] + raw.encode("hex")).decode("hex")
+		else:
+			txn_output["scriptPubKey"] = self.generate_op_return_script(data).decode("hex")
 		txn_output["scriptPubKeyBytes"] = struct.pack("<B",len(txn_output["scriptPubKey"]))
 		self.txn_outputs.append(txn_output)
 
@@ -65,7 +68,7 @@ class Transaction(object):
 					+ self.txn_inputs[0]["script"]
 					+ self.txn_inputs[0]["sequence"]
 				)
-		
+
 		print self.txn_outputs_count,len(self.txn_outputs)
 		assert self.txn_outputs_count == len(self.txn_outputs)
 		self.raw_transaction += struct.pack("<B",self.txn_outputs_count)
@@ -88,7 +91,7 @@ class Transaction(object):
 		public_key = ('\04'+verifying_key.to_string()).encode("hex")
 		signature = signing_key.sign_digest(hashed_tx,sigencode = ecdsa.util.sigencode_der)+'\01' #'\01' is a part of signature
 		self.txn_inputs[0]["signature"] = signature
-		sigscript = (struct.pack("<B",len(signature))+signature + struct.pack("<B",len(public_key.decode("hex"))) + public_key.decode("hex")) 
+		sigscript = (struct.pack("<B",len(signature))+signature + struct.pack("<B",len(public_key.decode("hex"))) + public_key.decode("hex"))
 		self.txn_inputs[0]["sigScript"] = sigscript
 		self.txn_inputs[0]["sigScriptBytes"] = struct.pack("<B",len(sigscript))
 		return sigscript

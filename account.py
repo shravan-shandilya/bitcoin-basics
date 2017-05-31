@@ -11,7 +11,7 @@ class Account(object):
             self.bitcoin_private,self.bitcoin_public = generate_key_pair(private_key)
 	    if store:
                 self.store()
-	
+
     def store(self):
         if not os.path.exists("./wallet/"+self.nickname):
             os.makedirs("./.wallet/"+self.nickname)
